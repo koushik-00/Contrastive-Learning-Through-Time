@@ -2,7 +2,7 @@
 
 Self-supervised pre-training of a video encoder on a single unlabeled video, evaluated via linear probe on UCF-101.
 
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/<your-username>/<repo-name>/blob/main/CLTT_notebook.ipynb)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1Hr5KbltEUt3F7_YZZRS-vTYIPnOkKmz4?usp=sharing)
 
 ## Objective
 
@@ -23,7 +23,7 @@ MyDrive/CLTT_Soccer/
 └── ucf101/
 ```
 
-UCF-101 should be placed in `ucf101/` as `archive.zip`. Download it from the [UCF-101 website](https://www.crcv.ucf.edu/data/UCF101.php).
+UCF-101 should be placed in `ucf101/` as `archive.zip`. Download it from the [Kaggle](https://www.kaggle.com/datasets/matthewjansen/ucf101-action-recognition).
 
 **Expected runtime:** Frame extraction ~5 min, pre-training ~40 min/epoch, feature extraction ~2 hrs. Plan for 3-4 hours total on an A100.
 
@@ -42,7 +42,7 @@ Run all cells in `CLTT_notebook.ipynb` in order. The notebook handles:
 ## Model
 
 - **Backbone:** R(2+1)D-18
-- **Projection head:** Linear(512, 512) → BatchNorm → ReLU → Linear(512, 128)
+- **Projection head:** Linear(512, 512) -> BatchNorm -> ReLU -> Linear(512, 128)
 - **Loss:** NT-Xent (temperature = 0.07)
 - **Optimizer:** AdamW (lr = 3e-4, weight decay = 1e-4)
 - **Scheduler:** CosineAnnealingLR
