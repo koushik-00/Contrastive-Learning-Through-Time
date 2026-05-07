@@ -1,0 +1,10 @@
+.DS_Store
+.vscode/
+.agents/
+.claude/
+.ipynb_checkpoints/
+skills-lock.json
+splits.zip
+ucfTrainTestlist/
+Video_files/
+papers/

@@ -1,12 +1,12 @@
 # CLTT: Contrastive Learning with Temporal Triplets
 
-Self-supervised pre-training of a video encoder on a single unlabeled video, evaluated via linear probe on UCF-101.
+Self-supervised pre-training of a video encoder on a single unlabeled video, with linear probe evaluation on UCF-101.
 
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1Hr5KbltEUt3F7_YZZRS-vTYIPnOkKmz4?usp=sharing)
 
-## Objective
+## Overview
 
-The goal was to see how much a video encoder could learn from a single unlabeled video using contrastive learning. Two clips sampled from nearby timestamps are treated as a positive pair — the model learns to bring them close in embedding space and push apart clips from distant timestamps. After pre-training, the encoder is frozen and a linear classifier is trained on UCF-101 to measure how well the representations transfer to a standard action recognition benchmark.
+An R(2+1)D-18 backbone is pre-trained on a single unlabeled soccer broadcast using temporally sampled positive clip pairs under the NT-Xent contrastive objective. The learned representations are evaluated via a linear probe on UCF-101 (101-class action recognition), with the encoder kept frozen throughout evaluation.
 
 ## Setup
 
@@ -14,7 +14,7 @@ The goal was to see how much a video encoder could learn from a single unlabeled
 pip install torch torchvision yt-dlp decord av tqdm matplotlib
 ```
 
-The notebook mounts Google Drive and expects the following structure:
+The notebook mounts Google Drive and expects the following directory structure:
 
 ```
 MyDrive/CLTT_Soccer/
@@ -23,54 +23,51 @@ MyDrive/CLTT_Soccer/
 └── ucf101/
 ```
 
-UCF-101 should be placed in `ucf101/` as `archive.zip`. Download it from the [Kaggle](https://www.kaggle.com/datasets/matthewjansen/ucf101-action-recognition).
+UCF-101 (`archive.zip`) is available on [Kaggle](https://www.kaggle.com/datasets/matthewjansen/ucf101-action-recognition).
 
-**Expected runtime:** Frame extraction ~5 min, pre-training ~40 min/epoch, feature extraction ~2 hrs. Plan for 3-4 hours total on an A100.
+**Expected runtime:** Frame extraction ~5 min · Pre-training ~40 min/epoch · Feature extraction ~2 hrs (A100 GPU)
 
-## Pre-training video
+## Pre-training data
 
-A 3-hour soccer broadcast ([YouTube](https://www.youtube.com/watch?v=gTmR5PMIIjs)). The notebook downloads it automatically if not already on Drive.
+A 3-hour soccer broadcast ([YouTube](https://www.youtube.com/watch?v=gTmR5PMIIjs)), downloaded automatically by the notebook if not already on Drive.
 
-## How to run
+## Reproducibility
 
-Run all cells in `CLTT_notebook.ipynb` in order. The notebook handles:
-1. Video download and frame extraction
-2. Model definition and pre-training
-3. Feature extraction on UCF-101
-4. Linear probe evaluation
+Run all cells in `CLTT.ipynb` sequentially. The notebook covers video download and frame extraction, model and loss definitions, pre-training, UCF-101 feature extraction, and linear probe evaluation.
 
-## Model
+## Method
 
-- **Backbone:** R(2+1)D-18
-- **Projection head:** Linear(512, 512) -> BatchNorm -> ReLU -> Linear(512, 128)
-- **Loss:** NT-Xent (temperature = 0.07)
-- **Optimizer:** AdamW (lr = 3e-4, weight decay = 1e-4)
-- **Scheduler:** CosineAnnealingLR
-- **Hardware:** Google Colab A100 GPU
+### Architecture
 
-## Implementation details
+| Component | Configuration |
+|-----------|--------------|
+| Backbone | R(2+1)D-18 |
+| Projection head | Linear(512→512) → BatchNorm1d → ReLU → Linear(512→128) |
+| Loss | NT-Xent (τ = 0.07) |
+| Optimizer | AdamW (lr = 3×10⁻⁴, weight decay = 10⁻⁴) |
+| LR schedule | CosineAnnealingLR |
+| Hardware | Google Colab A100 |
 
-**Clip sampling:**
-- Frames extracted at 5 fps, scaled to 128×128
-- Each clip is 8 consecutive frames (~1.6 seconds of video)
-- Positive pairs: two clips whose start frames are within 2 seconds of each other (`pos_window=2s`)
-- Minimum offset between the two clips: 0.8 seconds, so they don't overlap
+### Clip sampling
 
-**Augmentations (applied independently to each clip):**
-- RandomCrop to 112×112
+Frames are extracted at 5 fps and scaled to 128×128. Each clip is 8 consecutive frames (~1.6 s). A positive pair consists of two clips sampled within a 2 s temporal window (`pos_window = 10 frames` at 5 fps), with a minimum separation of 0.8 s (`min_offset = 4 frames`) to prevent frame overlap between the two clips.
+
+### Augmentation
+
+Applied independently to each clip in a pair:
+
+- RandomCrop (128×128 → 112×112)
 - RandomHorizontalFlip
 - ColorJitter (brightness=0.4, contrast=0.4, saturation=0.4, hue=0.1)
-- Normalized with Kinetics-400 stats (mean=[0.432, 0.395, 0.376], std=[0.228, 0.221, 0.217])
+- Normalization using Kinetics-400 statistics (μ = [0.432, 0.395, 0.376], σ = [0.228, 0.221, 0.217])
 
-**Linear probe:**
-- Encoder frozen after pre-training
-- Single Linear(512, 101) head trained for 20 epochs
-- AdamW (lr = 1e-3, weight decay = 1e-4), batch size 256
-- Train features: 209,582 clips — Test features: 81,743 clips
+### Linear probe
+
+The encoder is frozen and a `Linear(512, 101)` head is trained for 20 epochs using AdamW (lr = 10⁻³, weight decay = 10⁻⁴, batch size 256) on pre-extracted UCF-101 features (train: 209,582 clips; test: 81,743 clips).
 
 ## Results
 
-**Pre-training** (2 epochs, 55,075 frames at 5 fps, 128×128):
+**Pre-training** (2 epochs, 55,075 frames at 5 fps):
 
 | Epoch | Avg NT-Xent Loss |
 |-------|-----------------|
@@ -81,19 +78,17 @@ Run all cells in `CLTT_notebook.ipynb` in order. The notebook handles:
 
 **Linear probe on UCF-101** (frozen encoder, 101 classes):
 
-| Epoch | Test Accuracy |
-|-------|--------------|
-| 5     | 22.17%       |
-| 10    | 22.09%       |
-| 15    | 22.39%       |
-| 20    | 23.04%       |
+| Epoch | Top-1 Accuracy |
+|-------|---------------|
+| 5     | 22.17%        |
+| 10    | 22.09%        |
+| 15    | 22.39%        |
+| 20    | 23.04%        |
 
-## Interpretation
+## Discussion
 
-The loss dropped from 0.6132 to 0.2293 over two epochs, a good sign that the model is separating temporally distant clips from nearby ones.
+Pre-training loss decreases from 0.6132 to 0.2293 across two epochs, showing the model is learning to separate temporally distant clip pairs from proximate ones.
 
-The linear probe hit 23.04% on UCF-101. Random chance across 101 classes is ~1%, so the model is picking up something real. Fully supervised R(2+1)D-18 on the same benchmark reaches 75-85%, so the gap is large.
+The linear probe reaches 23.04% top-1 accuracy on UCF-101 — well below fully supervised R(2+1)D-18 (75–85%), but well above random chance (~1% over 101 classes). The gap is expected. Pre-training on a single soccer video creates a strong domain mismatch with UCF-101's 101 action categories, most of which have no visual correspondence with soccer footage. Two training epochs compound this. The more interesting result is that any transfer occurs under these constraints — the encoder generalizes temporal structure from one unlabeled video to an unseen, heterogeneous benchmark.
 
-Pre-training on one soccer video and testing on 101 diverse action classes is a hard transfer problem — most of UCF-101 looks nothing like soccer footage. Two epochs doesn't give the encoder much to work with either. The result that stands out is that any transfer happened at all. Representations learned from a single unlabeled video generalized well enough to support above-chance classification on a benchmark the model never saw.
-
-To push accuracy further, more pre-training epochs or a more diverse video set would be the first things to try.
+Extended pre-training and a more diverse video corpus are the most direct paths to closing the gap with supervised baselines.
