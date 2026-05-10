@@ -80,15 +80,32 @@ The encoder is frozen and a `Linear(512, 101)` head is trained for 20 epochs usi
 
 | Epoch | Top-1 Accuracy |
 |-------|---------------|
-| 5     | 22.17%        |
-| 10    | 22.09%        |
-| 15    | 22.39%        |
-| 20    | 23.04%        |
+| 5     | 21.81%        |
+| 10    | 21.23%        |
+| 15    | 22.43%        |
+| 20    | 23.10%        |
+
+**Baseline: random encoder** (same linear probe, no pre-training):
+
+| Epoch | Top-1 Accuracy |
+|-------|---------------|
+| 5     | 11.54%        |
+| 10    | 11.79%        |
+| 15    | 13.26%        |
+| 20    | 14.47%        |
+
+| | Top-1 (epoch 20) |
+|---|---|
+| CLTT pre-trained | 23.10% |
+| Random encoder | 14.47% |
+| Gain from pre-training | **+8.63 pp** |
 
 ## Discussion
 
 Pre-training loss decreases from 0.6132 to 0.2293 across two epochs, showing the model is learning to separate temporally distant clip pairs from proximate ones.
 
-The linear probe reaches 23.04% top-1 accuracy on UCF-101 — well below fully supervised R(2+1)D-18 (75–85%), but well above random chance (~1% over 101 classes). The gap is expected. Pre-training on a single soccer video creates a strong domain mismatch with UCF-101's 101 action categories, most of which have no visual correspondence with soccer footage. Two training epochs compound this. The more interesting result is that any transfer occurs under these constraints — the encoder generalizes temporal structure from one unlabeled video to an unseen, heterogeneous benchmark.
+The linear probe reaches 23.10% top-1 accuracy on UCF-101 — well below fully supervised R(2+1)D-18 (75–85%), but well above random chance (~1% over 101 classes). The gap is expected. Pre-training on a single soccer video creates a strong domain mismatch with UCF-101's 101 action categories, most of which have no visual correspondence with soccer footage. Two training epochs compound this.
+
+To isolate what contrastive pre-training contributes from what R(2+1)D-18's convolutional inductive biases provide for free, the same linear probe was run on features from a randomly initialized (untrained) encoder. The random baseline reaches 14.47% — above chance, confirming the architecture itself has some inductive bias toward spatiotemporal structure. CLTT pre-training adds 8.63 percentage points on top of that, a margin cleanly attributable to the contrastive objective and not to the architecture alone.
 
 Extended pre-training and a more diverse video corpus are the most direct paths to closing the gap with supervised baselines.
