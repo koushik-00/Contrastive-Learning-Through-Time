@@ -2,7 +2,7 @@
 
 Self-supervised pre-training of a video encoder on a single unlabeled video, with linear probe evaluation on UCF-101.
 
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1Hr5KbltEUt3F7_YZZRS-vTYIPnOkKmz4?usp=sharing)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/112ckqCBBv8UqOPj7q4MVXe0YgjwlW4JY?usp=sharing)
 
 ## Overview
 
