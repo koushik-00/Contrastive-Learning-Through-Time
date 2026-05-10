@@ -1,4 +1,4 @@
-# CLTT: Contrastive Learning with Temporal Triplets
+# CLTT: Contrastive Learning with Through Time
 
 Self-supervised pre-training of a video encoder on a single unlabeled video, with linear probe evaluation on UCF-101.
 
